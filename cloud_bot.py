@@ -168,21 +168,21 @@ def main():
 
         except oci.exceptions.ServiceError as e:
             if "Out of host capacity" in e.message:
-                print(f"❌ Out of capacity. Waiting {RETRY_INTERVAL}s...")
+                print(f"❌ Out of capacity. Waiting {RETRY_INTERVAL}s...", flush=True)
                 time.sleep(RETRY_INTERVAL)
             elif e.status == 429 or "TooManyRequests" in e.code:
                 cooldown = 70
-                print(f"⏳ Rate limited (429). Cooldown for {cooldown}s...")
+                print(f"⏳ Rate limited (429). Cooldown for {cooldown}s...", flush=True)
                 time.sleep(cooldown)
             elif "LimitExceeded" in e.code:
-                print(f"⚠️ Limit Exceeded: {e.message[:100]}")
+                print(f"⚠️ Limit Exceeded: {e.message[:100]}", flush=True)
                 time.sleep(RETRY_INTERVAL)
             else:
-                print(f"❌ Error ({e.status}): {e.message[:100]}")
+                print(f"❌ Error ({e.status}): {e.message[:100]}", flush=True)
                 time.sleep(RETRY_INTERVAL)
 
         except Exception as ex:
-            print(f"💥 Exception: {str(ex)[:100]}")
+            print(f"💥 Exception: {str(ex)[:100]}", flush=True)
             time.sleep(RETRY_INTERVAL)
 
 

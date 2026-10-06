@@ -41,4 +41,4 @@ jobs:
           RETRY_INTERVAL: 25
           MAX_MINUTES: 330
         run: |
-          python cloud_bot.py
+          python -u cloud_bot.py
