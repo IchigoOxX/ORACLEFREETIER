@@ -16,6 +16,7 @@ import datetime
 import urllib.parse
 import urllib.request
 import oci
+import oci.core
 
 # Environment variables provided by GitHub Actions Secrets
 OCI_USER = os.getenv("OCI_USER")
@@ -85,7 +86,7 @@ def get_oci_client():
         "region": OCI_REGION
     }
     oci.config.validate_config(config)
-    return oci.compute.ComputeClient(config)
+    return oci.core.ComputeClient(config)
 
 
 def main():
@@ -122,22 +123,22 @@ def main():
         now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         print(f"[{now}] Attempt {attempt} ({current_fd})...", end=" ", flush=True)
 
-        launch_details = oci.compute.models.LaunchInstanceDetails(
+        launch_details = oci.core.models.LaunchInstanceDetails(
             compartment_id=COMPARTMENT_ID,
             availability_domain=AVAILABILITY_DOMAIN,
             fault_domain=current_fd,
             shape=SHAPE,
-            shape_config=oci.compute.models.LaunchInstanceShapeConfigDetails(
+            shape_config=oci.core.models.LaunchInstanceShapeConfigDetails(
                 ocpus=OCPUS,
                 memory_in_gbs=MEMORY_GB
             ),
             display_name=DISPLAY_NAME,
             image_id=IMAGE_ID,
-            source_details=oci.compute.models.InstanceSourceViaImageDetails(
+            source_details=oci.core.models.InstanceSourceViaImageDetails(
                 image_id=IMAGE_ID,
                 boot_volume_size_in_gbs=BOOT_VOLUME_GB
             ),
-            create_vnic_details=oci.compute.models.CreateVnicDetails(
+            create_vnic_details=oci.core.models.CreateVnicDetails(
                 subnet_id=SUBNET_ID,
                 assign_public_ip=True
             ),
