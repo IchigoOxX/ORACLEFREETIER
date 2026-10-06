@@ -1,0 +1,20 @@
+# Logs and temp files
+*.log
+crash.log
+instance_details.json
+shape_config.json
+temp/
+
+# Keys and Secrets (NEVER COMMIT)
+*.pem
+*.key
+*.pub
+id_rsa*
+.oci/
+.ssh/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.env
