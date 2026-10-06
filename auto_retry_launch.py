@@ -39,15 +39,17 @@ MEMORY_GB = 12
 BOOT_VOLUME_GB = 100
 DISPLAY_NAME = "free-tier-ubuntu"
 
-RETRY_INTERVAL_SECONDS = 45  # Retry every 45 seconds
-MAX_RETRIES = 1440  # Max 24 hours of retrying (1440 * 60s = 24h)
+FAULT_DOMAINS = ["FAULT-DOMAIN-1", "FAULT-DOMAIN-2", "FAULT-DOMAIN-3"]
+
+RETRY_INTERVAL_SECONDS = 70  # 70 seconds prevents 429 TooManyRequests
+MAX_RETRIES = 1440  # Max 24 hours of retrying
 # =======================================
 
 os.environ["SUPPRESS_LABEL_WARNING"] = "True"
 os.environ["OCI_CLI_READ_TIMEOUT"] = "300"
 
 
-def launch_instance():
+def launch_instance(fault_domain=None):
     """Attempt to launch the instance. Returns (success, message)."""
     cmd = [
         OCI_PATH, "compute", "instance", "launch",
@@ -63,6 +65,8 @@ def launch_instance():
         "--ssh-authorized-keys-file", SSH_KEY_PATH,
         "--output", "json"
     ]
+    if fault_domain:
+        cmd.extend(["--fault-domain", fault_domain])
 
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
@@ -94,11 +98,14 @@ def main():
     print("Press Ctrl+C to stop at any time.")
     print()
 
+    fd_idx = 0
     for attempt in range(1, MAX_RETRIES + 1):
+        current_fd = FAULT_DOMAINS[fd_idx % len(FAULT_DOMAINS)]
+        fd_idx += 1
         now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print(f"[{now}] Attempt {attempt}/{MAX_RETRIES} — Sending launch request...", flush=True)
+        print(f"[{now}] Attempt {attempt}/{MAX_RETRIES} ({current_fd}) — Sending launch request...", flush=True)
 
-        success, message = launch_instance()
+        success, message = launch_instance(current_fd)
 
         if success:
             print("  🎉 SUCCESS! VM CREATED SUCCESSFULLY! 🎉")
