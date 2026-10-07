@@ -2,10 +2,14 @@ name: Oracle ARM Capacity Hunter
 
 on:
   schedule:
-    # Run every 6 hours automatically as a scheduled check
+    # Backup trigger every 6 hours in case any cycle gets interrupted
     - cron: '0 */6 * * *'
   workflow_dispatch:
     # Allows manual trigger anytime from GitHub Actions tab
+
+permissions:
+  contents: write
+  actions: write
 
 jobs:
   hunt:
@@ -27,6 +31,7 @@ jobs:
           pip install oci
 
       - name: Run Cloud Bot
+        id: hunter
         env:
           OCI_USER: ${{ secrets.OCI_USER }}
           OCI_TENANCY: ${{ secrets.OCI_TENANCY }}
@@ -42,3 +47,11 @@ jobs:
           MAX_MINUTES: 330
         run: |
           python -u cloud_bot.py
+
+      - name: Auto-Retrigger Next Cycle
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT || github.token }}
+        run: |
+          echo "Current 5.5h cycle completed without capacity. Launching next cycle immediately..."
+          gh workflow run hunt_capacity.yml --ref main

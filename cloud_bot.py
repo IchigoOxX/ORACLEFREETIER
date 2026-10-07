@@ -99,34 +99,52 @@ def main():
     print(f"  Boot Volume:  {BOOT_VOLUME_GB} GB")
     print(f"  Region:       {OCI_REGION}")
     print(f"  AD:           {AVAILABILITY_DOMAIN}")
-    print(f"  Fault Domains: Rotating across {FAULT_DOMAINS}")
+    print(f"  Fault Domains: Automatic (searching all Fault Domains)")
     print(f"  Interval:     {RETRY_INTERVAL}s")
     print("=" * 60)
     print()
 
     client = get_oci_client()
 
+    # Pre-check: Verify if VM is already active
+    try:
+        existing = client.list_instances(compartment_id=COMPARTMENT_ID).data
+        active = [
+            inst for inst in existing
+            if inst.lifecycle_state in ["RUNNING", "PROVISIONING", "STARTING"]
+            and inst.shape == SHAPE
+        ]
+        if active:
+            inst = active[0]
+            print(f"🎉 Active instance already exists: {inst.display_name} ({inst.id})")
+            print(f"   State: {inst.lifecycle_state}")
+            msg = (
+                f"🎉 سيرفر أوراكل شغال وموجود بالفعل!\n"
+                f"الاسم: {inst.display_name}\n"
+                f"الحالة: {inst.lifecycle_state}\n"
+                f"الـ ID: {inst.id[:25]}..."
+            )
+            send_notification(msg)
+            sys.exit(0)
+    except Exception as e:
+        print(f"Note: Pre-check error: {e}")
+
     start_time = time.time()
     attempt = 0
-    fd_index = 0
 
     while True:
         elapsed_min = (time.time() - start_time) / 60
         if elapsed_min >= MAX_MINUTES:
-            print(f"\nReached max execution time of {MAX_MINUTES} minutes. Ending this workflow run.")
-            sys.exit(0)
+            print(f"\nTime limit reached ({MAX_MINUTES}m). Exiting to trigger next run cycle...")
+            sys.exit(1)
 
         attempt += 1
-        current_fd = FAULT_DOMAINS[fd_index % len(FAULT_DOMAINS)]
-        fd_index += 1
-
         now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print(f"[{now}] Attempt {attempt} ({current_fd})...", end=" ", flush=True)
+        print(f"[{now}] Attempt {attempt} — Requesting instance (all fault domains)...", flush=True)
 
         launch_details = oci.core.models.LaunchInstanceDetails(
             compartment_id=COMPARTMENT_ID,
             availability_domain=AVAILABILITY_DOMAIN,
-            fault_domain=current_fd,
             shape=SHAPE,
             shape_config=oci.core.models.LaunchInstanceShapeConfigDetails(
                 ocpus=OCPUS,
