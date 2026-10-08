@@ -43,7 +43,7 @@ python "d:\oracle free tier\auto_retry_launch.py"
    - Shape: **VM.Standard.A1.Flex** → 4 OCPU, 24 GB RAM
    - Networking: اختار **free-tier-vcn** و **free-tier-public-subnet**
    - Boot Volume: غير الحجم لـ **200 GB**
-   - SSH Key: ارفع الملف `C:\Users\soon3\.ssh\oracle_free_tier.pub`
+   - SSH Key: ارفع الملف `~/.ssh/oracle_free_tier.pub`
 
 ## بعد ما الـ VM تتعمل
 
